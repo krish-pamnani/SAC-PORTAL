@@ -40,10 +40,8 @@ services:
         value: iimidr.ac.in
 
   # Frontend Static Site
-  - type: web
+  - type: static
     name: sac-portal-frontend
-    env: static
-    plan: free
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/build
     envVars:
