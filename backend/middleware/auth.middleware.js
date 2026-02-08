@@ -65,3 +65,26 @@ export const isEntityOrTreasury = (req, res, next) => {
   }
   next();
 };
+
+/**
+ * Middleware to verify admin setup key for setup routes
+ * Expects the key in the x-admin-key header
+ */
+export const requireAdminKey = (req, res, next) => {
+  const adminKey = req.headers['x-admin-key'];
+  const expectedKey = process.env.ADMIN_SETUP_KEY;
+
+  if (!expectedKey) {
+    return res.status(500).json({ error: 'Admin setup key not configured on server' });
+  }
+
+  if (!adminKey) {
+    return res.status(401).json({ error: 'Admin setup key is required. Pass it in the x-admin-key header.' });
+  }
+
+  if (adminKey !== expectedKey) {
+    return res.status(403).json({ error: 'Invalid admin setup key' });
+  }
+
+  next();
+};
