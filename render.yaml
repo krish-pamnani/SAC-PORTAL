@@ -39,12 +39,3 @@ services:
       - key: ALLOWED_EMAIL_DOMAIN
         value: iimidr.ac.in
 
-  # Frontend Static Site
-  - type: web
-    name: sac-portal-frontend
-    env: static
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/build
-    envVars:
-      - key: REACT_APP_API_URL
-        sync: false
