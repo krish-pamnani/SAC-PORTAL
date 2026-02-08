@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 import { supabaseAdmin } from '../config/supabase.js';
 
@@ -6,19 +6,9 @@ dotenv.config();
 
 class EmailService {
   constructor() {
-    // Create reusable transporter
-    this.transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT),
-      secure: process.env.EMAIL_SECURE === 'true',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-    });
+    this.resend = new Resend(process.env.RESEND_API_KEY);
+    // Use verified domain email or fallback to Resend's test address
+    this.fromAddress = process.env.EMAIL_FROM || 'SAC Treasury <onboarding@resend.dev>';
   }
 
   /**
@@ -28,12 +18,18 @@ class EmailService {
    */
   async sendEmail({ to, subject, html, eventId = null, emailType }) {
     try {
-      await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM,
-        to,
+      const { data, error } = await this.resend.emails.send({
+        from: this.fromAddress,
+        to: [to],
         subject,
         html,
       });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      console.log('Email sent successfully:', data?.id);
 
       // Log email
       await this.logEmail({
