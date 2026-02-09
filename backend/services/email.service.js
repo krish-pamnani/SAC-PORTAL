@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
 import { supabaseAdmin } from '../config/supabase.js';
 
@@ -6,9 +6,9 @@ dotenv.config();
 
 class EmailService {
   constructor() {
-    this.resend = new Resend(process.env.RESEND_API_KEY);
-    // Use verified domain email or fallback to Resend's test address
-    this.fromAddress = process.env.EMAIL_FROM || 'SAC Treasury <onboarding@resend.dev>';
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    // Use verified sender email
+    this.fromAddress = process.env.EMAIL_FROM || 'IPM SAC Treasury <i24krishp@iimidr.ac.in>';
   }
 
   /**
@@ -18,18 +18,16 @@ class EmailService {
    */
   async sendEmail({ to, subject, html, eventId = null, emailType }) {
     try {
-      const { data, error } = await this.resend.emails.send({
+      const msg = {
+        to,
         from: this.fromAddress,
-        to: [to],
         subject,
         html,
-      });
+      };
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      console.log('Email sent successfully:', data?.id);
+      const response = await sgMail.send(msg);
+      
+      console.log('Email sent successfully via SendGrid:', response[0].statusCode);
 
       // Log email
       await this.logEmail({
@@ -42,6 +40,11 @@ class EmailService {
       return true;
     } catch (error) {
       console.error('Email send error:', error);
+      
+      // Log detailed error info for debugging
+      if (error.response) {
+        console.error('SendGrid Error Response:', JSON.stringify(error.response.body, null, 2));
+      }
 
       // Log failed email
       await this.logEmail({
